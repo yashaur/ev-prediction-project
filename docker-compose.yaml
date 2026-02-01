@@ -5,8 +5,11 @@ services:
     build:
       context: .
       dockerfile: api/Dockerfile
+      platforms:
+        - "linux/amd64"
+        - "linux/arm64"
 
-    image: yashaur/ev-api:latest
+    image: yashaur/ev-api:v1
     
     container_name: fastapi
 
@@ -18,8 +21,11 @@ services:
     build:
       context: .
       dockerfile: app/Dockerfile
+      platforms:
+        - "linux/amd64"
+        - "linux/arm64"
 
-    image: yashaur/ev-app:latest
+    image: yashaur/ev-app:v1
 
     container_name: streamlit
 
