@@ -5,3 +5,5 @@ joblib
 streamlit==1.53.0
 scikit-learn==1.7.2
 python-multipart
+requests
+pydantic
