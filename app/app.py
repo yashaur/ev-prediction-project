@@ -1,13 +1,10 @@
 import streamlit as st
-import pandas as pd
-import joblib
-import numpy as np
-import time
 import requests
+import os
+import time
 
-
-# Loading the classifier model
-classifier = joblib.load('./model/ev_efficiency_classifier.pkl')
+# Obtain the API URL environment variable, else override using generic localhost URL
+API_URL = os.getenv("API_URL", "http://localhost:8000")
 
 # Sample data based on highest probability of High-Efficiency EV
 sample = {
@@ -16,6 +13,7 @@ sample = {
     "seats": 5, "acceleration_0_100_kmph": 5.8, "top_speed_kmph": 225, "warranty_years": 8, "cargo_space_liters": 425, "safety_rating": 5
     }
 
+# Setting selectbox items for each non-numeric field
 manufacturers = ['BYD', 'Lucid', 'Volkswagen', 'BMW', 'Chevrolet', 'Nissan', 'Ford', 'Kia', 'Tesla', 'Hyundai']
 
 models = ['Model S', 'EV6', 'Ioniq', 'Model 3', 'Leaf', 'ID.4', 'Model X', 'Mustang Mach-E', 'Bolt', 'Air', 'i3']
@@ -45,6 +43,7 @@ drive_types = ['FWD', 'AWD', 'RWD']
 
 colors = ['Blue', 'White', 'Black', 'Green', 'Yellow', 'Silver', 'Red', 'Grey']
 
+# Setting proper field names against each field's variable name/key
 field_names = {
     "manufacturer": "Manufacturer", "model": "Model", "type": "Type", "drive_type": "Drive Type",
     "fuel_type": "Fuel Type", "color": "Colour", "fast_charging": "Fast Charging?", "country": "Country",
@@ -55,7 +54,7 @@ field_names = {
 }
 
 
-# Initialising input values for the current streamlit session
+# Initialising empty input values for the current streamlit session
 for k in sample:
     st.session_state[k] = st.session_state.get(k, None)
 
@@ -69,9 +68,7 @@ st.title("🚗 EV Efficiency Predictor", text_alignment = "center")
 
 st.write("⚡️ Predict whether your electric vehicle is high-efficiency or low-efficiency. Enter the following details:")
 
-# -------------------------
-# Demo button (fills inputs only)
-# -------------------------
+### DEMO AND RESET BUTTONS
 with st.container(horizontal=True):
 
     if st.button("Load Demo Values"):
@@ -82,9 +79,6 @@ with st.container(horizontal=True):
         for k in sample:
             st.session_state[k] = None
 
-# -------------------------
-# Input widgets
-# -------------------------
 
 ### BASIC DETAILS
 
@@ -252,50 +246,10 @@ color.selectbox(
 
 st.space('xxsmall')
 
-# -------------------------
-# Predict button (runs model)
-# -------------------------
 
-
+### PREDICT BUTTON
 
 if st.button("Predict", width = 'stretch', type = 'primary'):
-
-    start = time.time()
-
-    df = pd.DataFrame()
-
-    for col in sample.keys():
-        input_df = pd.DataFrame({str(col): [st.session_state[col]]})
-        df = pd.concat([df,input_df], axis = 1)
-
-
-    correct_order_features = [
-        'manufacturer', 'model', 'type', 'drive_type', 'fuel_type', 'color', 'fast_charging', 'country', 'city', 'battery_kwh',
-        'range_km', 'charging_time_hr', 'release_year', 'seats', 'acceleration_0_100_kmph', 'top_speed_kmph', 'warranty_years',
-        'cargo_space_liters', 'safety_rating'
-        ]
-
-    df = df[correct_order_features]
-
-    if df.loc[0,'fast_charging'] == 'Yes':
-        df.loc[0, 'fast_charging'] = 1
-    else:
-        df.loc[0, 'fast_charging'] = 0
-
-    df['fast_charging'] = df['fast_charging'].astype('int8')
-
-    prediction = classifier.predict(df)
-
-    time_taken = time.time() - start
-    time_output =  f" [Time taken: {time_taken:.3f}s]"
-
-    if prediction[0] == 1:
-        st.success("Your electric vehicle is high-efficiency! ✅" + time_output)
-    else:
-        st.error("Your electric vehicle is low-efficiency ❗️" + time_output)
-
-
-if st.button("Predict (using API)", width = 'stretch', type = 'primary'):
 
     start = time.time()
     
@@ -310,7 +264,7 @@ if st.button("Predict (using API)", width = 'stretch', type = 'primary'):
     else:
         try:
             response = requests.post(
-                "http://localhost:8000/predict",
+                f"{API_URL}/predict",
                 json=payload,
                 timeout=5
             )

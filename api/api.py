@@ -39,6 +39,14 @@ def preprocess(input_json):
     
     df = pd.DataFrame(input_json)
     
+
+    if df.loc[0,'fast_charging'] == 'Yes':
+        df.loc[0, 'fast_charging'] = '1'
+    else:
+        df.loc[0, 'fast_charging'] = '0'
+
+    df['fast_charging'] = df['fast_charging'].astype('int8')
+
     correct_order_features = [
     'manufacturer', 'model', 'type', 'drive_type', 'fuel_type', 'color', 'fast_charging', 'country', 'city', 'battery_kwh',
     'range_km', 'charging_time_hr', 'release_year', 'seats', 'acceleration_0_100_kmph', 'top_speed_kmph', 'warranty_years',
@@ -46,13 +54,6 @@ def preprocess(input_json):
     ]
 
     df = df[correct_order_features]
-
-    if df.loc[0,'fast_charging'] == 'Yes':
-        df.loc[0, 'fast_charging'] = 1
-    else:
-        df.loc[0, 'fast_charging'] = 0
-
-    df['fast_charging'] = df['fast_charging'].astype('int8')
 
     return df
 
