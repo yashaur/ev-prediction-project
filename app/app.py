@@ -4,7 +4,7 @@ import os
 import time
 
 # Obtain the API URL environment variable, else override using generic localhost URL
-API_URL = os.getenv("API_URL", "http://localhost:8000")
+API_URL = os.getenv("API_URL", "http://127.0.0.1:8000")
 
 # Sample data based on highest probability of High-Efficiency EV
 sample = {
@@ -89,7 +89,7 @@ manufacturer, model, type, fuel_type, country, city, release_year = st.columns(7
 manufacturer.selectbox(
     field_names['manufacturer'],
     options = manufacturers,
-    placeholder= "What's up?",
+    # placeholder= "Lund",
     key="manufacturer"
 )
 
