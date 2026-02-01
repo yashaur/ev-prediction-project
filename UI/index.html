@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EV Efficiency Predictor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            padding: 30px;
+            text-align: center;
+            position: relative;
+        }
+
+        .header h1 {
+            color: white;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .header p {
+            color: rgba(255,255,255,0.95);
+            font-size: 1.1em;
+        }
+
+        .demo-btn {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            background: white;
+            color: #f5576c;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 0.95em;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+        }
+
+        .demo-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+        }
+
+        .form-container {
+            padding: 40px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+
+        .form-group input,
+        .form-group select {
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.2em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .submit-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Loading Spinner */
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .loading-overlay.active {
+            display: flex;
+        }
+
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 5px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            color: white;
+            margin-top: 20px;
+            font-size: 1.2em;
+            text-align: center;
+        }
+
+        /* Result Display */
+        .result-container {
+            display: none;
+            margin-top: 30px;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .result-container.show {
+            display: block;
+        }
+
+        .result-high {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+        }
+
+        .result-low {
+            background: linear-gradient(135deg, #ee0979 0%, #ff6a00 100%);
+            color: white;
+        }
+
+        .result-container h2 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .result-container p {
+            font-size: 1.2em;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 768px) {
+            .demo-btn {
+                position: static;
+                margin-top: 15px;
+            }
+
+            .header h1 {
+                font-size: 1.8em;
+            }
+
+            .form-container {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="loading-overlay" id="loadingOverlay">
+        <div>
+            <div class="spinner"></div>
+            <div class="loading-text">Predicting efficiency...</div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <h1>⚡ EV Efficiency Predictor</h1>
+            <p>Predict whether your electric vehicle will be High or Low efficiency</p>
+            <button class="demo-btn" onclick="loadDemo()">Load Demo Data</button>
+        </div>
+
+        <div class="form-container">
+            <form id="predictionForm">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="manufacturer">Manufacturer</label>
+                        <select id="manufacturer" required>
+                            <option value="">Select Manufacturer</option>
+                            <option value="BYD">BYD</option>
+                            <option value="Lucid">Lucid</option>
+                            <option value="Volkswagen">Volkswagen</option>
+                            <option value="BMW">BMW</option>
+                            <option value="Chevrolet">Chevrolet</option>
+                            <option value="Nissan">Nissan</option>
+                            <option value="Ford">Ford</option>
+                            <option value="Kia">Kia</option>
+                            <option value="Tesla">Tesla</option>
+                            <option value="Hyundai">Hyundai</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="model">Model</label>
+                        <select id="model" required>
+                            <option value="">Select Model</option>
+                            <option value="Model S">Model S</option>
+                            <option value="EV6">EV6</option>
+                            <option value="Ioniq">Ioniq</option>
+                            <option value="Model 3">Model 3</option>
+                            <option value="Leaf">Leaf</option>
+                            <option value="ID.4">ID.4</option>
+                            <option value="Model X">Model X</option>
+                            <option value="Mustang Mach-E">Mustang Mach-E</option>
+                            <option value="Bolt">Bolt</option>
+                            <option value="Air">Air</option>
+                            <option value="i3">i3</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="type">Type</label>
+                        <select id="type" required>
+                            <option value="">Select Type</option>
+                            <option value="Coupe">Coupe</option>
+                            <option value="Hatchback">Hatchback</option>
+                            <option value="SUV">SUV</option>
+                            <option value="Truck">Truck</option>
+                            <option value="Crossover">Crossover</option>
+                            <option value="Sedan">Sedan</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="drive_type">Drive Type</label>
+                        <select id="drive_type" required>
+                            <option value="">Select Drive Type</option>
+                            <option value="FWD">FWD</option>
+                            <option value="AWD">AWD</option>
+                            <option value="RWD">RWD</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="fuel_type">Fuel Type</label>
+                        <select id="fuel_type" required>
+                            <option value="">Select Fuel Type</option>
+                            <option value="Electric">Electric</option>
+                            <option value="Hybrid">Hybrid</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="fast_charging">Fast Charging?</label>
+                        <select id="fast_charging" required>
+                            <option value="">Select Option</option>
+                            <option value="Yes">Yes</option>
+                            <option value="No">No</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="country">Country</label>
+                        <select id="country" required onchange="updateCities()">
+                            <option value="">Select Country</option>
+                            <option value="China">China</option>
+                            <option value="Japan">Japan</option>
+                            <option value="Norway">Norway</option>
+                            <option value="Canada">Canada</option>
+                            <option value="UK">UK</option>
+                            <option value="France">France</option>
+                            <option value="India">India</option>
+                            <option value="Germany">Germany</option>
+                            <option value="USA">USA</option>
+                            <option value="South Korea">South Korea</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="city">City</label>
+                        <select id="city" required>
+                            <option value="">Select Country First</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="battery_kwh">Battery Capacity (kWh)</label>
+                        <input type="number" id="battery_kwh" step="0.1" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="range_km">Range (km)</label>
+                        <input type="number" id="range_km" step="0.1" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="charging_time_hr">Charging Time (hours)</label>
+                        <input type="number" id="charging_time_hr" step="0.1" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="release_year">Release Year</label>
+                        <select id="release_year" required>
+                            <option value="">Select Year</option>
+                            <option value="2012">2012</option>
+                            <option value="2013">2013</option>
+                            <option value="2014">2014</option>
+                            <option value="2015">2015</option>
+                            <option value="2016">2016</option>
+                            <option value="2017">2017</option>
+                            <option value="2018">2018</option>
+                            <option value="2019">2019</option>
+                            <option value="2020">2020</option>
+                            <option value="2021">2021</option>
+                            <option value="2022">2022</option>
+                            <option value="2023">2023</option>
+                            <option value="2024">2024</option>
+                            <option value="2025">2025</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="seats">Number of Seats</label>
+                        <input type="number" id="seats" min="2" max="9" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="acceleration_0_100_kmph">Acceleration 0-100 km/h (secs)</label>
+                        <input type="number" id="acceleration_0_100_kmph" step="0.1" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="top_speed_kmph">Top Speed (km/h)</label>
+                        <input type="number" id="top_speed_kmph" step="1" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="warranty_years">Warranty (years)</label>
+                        <input type="number" id="warranty_years" min="1" max="15" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="cargo_space_liters">Cargo Space (litres)</label>
+                        <input type="number" id="cargo_space_liters" step="0.1" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="safety_rating">Safety Rating (out of 5)</label>
+                        <input type="number" id="safety_rating" min="0" max="5" step="0.1" required>
+                    </div>
+                </div>
+
+                <button type="submit" class="submit-btn">Predict Efficiency</button>
+            </form>
+
+            <div id="resultContainer" class="result-container">
+                <h2 id="resultTitle"></h2>
+                <p id="resultMessage"></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const citiesData = {
+            'China': ['Shanghai', 'Shenzhen', 'Beijing'],
+            'Japan': ['Tokyo', 'Osaka'],
+            'Norway': ['Oslo'],
+            'Canada': ['Vancouver', 'Toronto'],
+            'UK': ['London', 'Manchester'],
+            'France': ['Paris'],
+            'India': ['Pune', 'Bangalore', 'Delhi'],
+            'Germany': ['Munich', 'Berlin'],
+            'USA': ['New York', 'Austin', 'San Francisco', 'Seattle'],
+            'South Korea': ['Seoul']
+        };
+
+        function updateCities() {
+            const countrySelect = document.getElementById('country');
+            const citySelect = document.getElementById('city');
+            const selectedCountry = countrySelect.value;
+
+            citySelect.innerHTML = '<option value="">Select City</option>';
+
+            if (selectedCountry && citiesData[selectedCountry]) {
+                citiesData[selectedCountry].forEach(city => {
+                    const option = document.createElement('option');
+                    option.value = city;
+                    option.textContent = city;
+                    citySelect.appendChild(option);
+                });
+            }
+        }
+
+        function loadDemo() {
+            const demoData = {
+                manufacturer: "Tesla",
+                model: "Model 3",
+                type: "Sedan",
+                drive_type: "RWD",
+                fuel_type: "Electric",
+                fast_charging: "Yes",
+                country: "USA",
+                city: "San Francisco",
+                battery_kwh: 60,
+                range_km: 450,
+                charging_time_hr: 1.2,
+                release_year: 2023,
+                seats: 5,
+                acceleration_0_100_kmph: 5.8,
+                top_speed_kmph: 225,
+                warranty_years: 8,
+                cargo_space_liters: 425,
+                safety_rating: 5
+            };
+
+            Object.keys(demoData).forEach(key => {
+                const element = document.getElementById(key);
+                if (element) {
+                    element.value = demoData[key];
+                }
+            });
+
+            // Trigger city update for country selection
+            updateCities();
+            document.getElementById('city').value = demoData.city;
+        }
+
+        document.getElementById('predictionForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const formData = {
+                manufacturer: document.getElementById('manufacturer').value,
+                model: document.getElementById('model').value,
+                type: document.getElementById('type').value,
+                drive_type: document.getElementById('drive_type').value,
+                fuel_type: document.getElementById('fuel_type').value,
+                color: "Blue",
+                fast_charging: document.getElementById('fast_charging').value,
+                country: document.getElementById('country').value,
+                city: document.getElementById('city').value,
+                battery_kwh: parseFloat(document.getElementById('battery_kwh').value),
+                range_km: parseFloat(document.getElementById('range_km').value),
+                charging_time_hr: parseFloat(document.getElementById('charging_time_hr').value),
+                release_year: parseInt(document.getElementById('release_year').value),
+                seats: parseInt(document.getElementById('seats').value),
+                acceleration_0_100_kmph: parseFloat(document.getElementById('acceleration_0_100_kmph').value),
+                top_speed_kmph: parseFloat(document.getElementById('top_speed_kmph').value),
+                warranty_years: parseInt(document.getElementById('warranty_years').value),
+                cargo_space_liters: parseFloat(document.getElementById('cargo_space_liters').value),
+                safety_rating: parseFloat(document.getElementById('safety_rating').value)
+            };
+
+            // Show loading overlay
+            document.getElementById('loadingOverlay').classList.add('active');
+
+            try {
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const result = await response.json();
+
+                // Hide loading overlay
+                document.getElementById('loadingOverlay').classList.remove('active');
+
+                // Display result
+                const resultContainer = document.getElementById('resultContainer');
+                const resultTitle = document.getElementById('resultTitle');
+                const resultMessage = document.getElementById('resultMessage');
+
+                if (result.prediction === 1) {
+                    resultContainer.className = 'result-container result-high show';
+                    resultTitle.textContent = '🌟 High Efficiency!';
+                    resultMessage.textContent = 'This EV configuration is predicted to have HIGH efficiency. Great choice for eco-conscious driving!';
+                } else {
+                    resultContainer.className = 'result-container result-low show';
+                    resultTitle.textContent = '⚠️ Low Efficiency';
+                    resultMessage.textContent = 'This EV configuration is predicted to have LOW efficiency. Consider adjusting specifications for better performance.';
+                }
+
+                // Scroll to result
+                resultContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+            } catch (error) {
+                document.getElementById('loadingOverlay').classList.remove('active');
+                alert('Error making prediction. Please try again.');
+                console.error('Error:', error);
+            }
+        });
+    </script>
+</body>
+</html>

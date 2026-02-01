@@ -1,9 +1,19 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
+from fastapi.responses import JSONResponse, HTMLResponse
 import joblib
 import pandas as pd
+from fastapi.middleware.cors import CORSMiddleware 
 
 app = FastAPI(title = "EV Efficiency Predictor")
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 MODEL_PATH = 'model/ev_efficiency_classifier.pkl' 
 
@@ -65,3 +75,8 @@ async def predict_efficiency(input_json: dict):
     prediction = classifier.predict(input_df)[0]
 
     return {'prediction' :prediction}
+
+@app.get("/", response_class=HTMLResponse)
+def home():
+    with open('UI/index.html', 'r') as f:
+        return f.read()
