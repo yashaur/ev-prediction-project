@@ -241,6 +241,8 @@ st.space('xxsmall')
 
 if st.button("Predict", width = 'stretch', type = 'primary'):
 
+    start = time.time()
+
     df = pd.DataFrame()
 
     for col in sample.keys():
@@ -265,13 +267,18 @@ if st.button("Predict", width = 'stretch', type = 'primary'):
 
     prediction = classifier.predict(df)
 
+    time_taken = time.time() - start
+    time_output =  f" [Time taken: {time_taken:.3f}s]"
+
     if prediction[0] == 1:
-        st.success("Your electric vehicle is high-efficiency! ✅")
+        st.success("Your electric vehicle is high-efficiency! ✅" + time_output)
     else:
-        st.error("Your electric vehicle is low-efficiency ❗️")
+        st.error("Your electric vehicle is low-efficiency ❗️" + time_output)
 
 
 if st.button("Predict (using API)", width = 'stretch', type = 'primary'):
+
+    start = time.time()
     
     payload = {col: st.session_state[col] for col in sample.keys()}
 
@@ -284,11 +291,14 @@ if st.button("Predict (using API)", width = 'stretch', type = 'primary'):
 
         if response.status_code == 200:
             result = response.json()['prediction']
+            
+            time_taken = time.time() - start
+            time_output =  f" [Time taken: {time_taken:.3f}s]"
 
             if result == 1:
-                st.success("Your electric vehicle is high-efficiency! ✅")
+                st.success("Your electric vehicle is high-efficiency! ✅" + time_output)
             else:
-                st.error("Your electric vehicle is low-efficiency ❗️")
+                st.error("Your electric vehicle is low-efficiency ❗️" + time_output)
 
         else:
             st.error(f"API Error {response.status_code}: {response.text}")
