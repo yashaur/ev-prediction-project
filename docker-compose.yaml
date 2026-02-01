@@ -5,6 +5,8 @@ services:
     build:
       context: .
       dockerfile: api/Dockerfile
+
+    image: yashaur/ev-api:latest
     
     container_name: fastapi
 
@@ -16,6 +18,8 @@ services:
     build:
       context: .
       dockerfile: app/Dockerfile
+
+    image: yashaur/ev-app:latest
 
     container_name: streamlit
 
