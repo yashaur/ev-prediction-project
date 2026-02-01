@@ -16,9 +16,8 @@
 
 GitHub: https://github.com/mohd-musheer
 
-Docker Hub: https://hub.docker.com/r/musheer/ev-efficiency-predictor
+Docker Hub: https://hub.docker.com/r/mohdmusheer/ev-efficiency-predictor
 
-Backend: FastAPI, Pydantic
 
 Machine Learning: Scikit-learn, Pandas, Joblib
 
