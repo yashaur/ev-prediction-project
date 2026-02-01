@@ -3,6 +3,7 @@ import pandas as pd
 import joblib
 import numpy as np
 import time
+import requests
 
 
 # Loading the classifier model
@@ -268,3 +269,29 @@ if st.button("Predict", width = 'stretch', type = 'primary'):
         st.success("Your electric vehicle is high-efficiency! ✅")
     else:
         st.error("Your electric vehicle is low-efficiency ❗️")
+
+
+if st.button("Predict (using API)", width = 'stretch', type = 'primary'):
+    
+    payload = {col: st.session_state[col] for col in sample.keys()}
+
+    try:
+        response = requests.post(
+            "http://localhost:8000/predict",
+            json=payload,
+            timeout=5
+        )
+
+        if response.status_code == 200:
+            result = response.json()['prediction']
+
+            if result == 1:
+                st.success("Your electric vehicle is high-efficiency! ✅")
+            else:
+                st.error("Your electric vehicle is low-efficiency ❗️")
+
+        else:
+            st.error(f"API Error {response.status_code}: {response.text}")
+
+    except requests.exceptions.RequestException as e:
+        st.error(f"Connection error: {e}")
